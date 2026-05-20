@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audit log - {{ log_name }}</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;max-width:1280px;margin:2rem auto;padding:0 1rem;color:#1a1a2e;background:#fafafa}
+h1{font-size:1.5rem;margin-bottom:1rem}
+.log-name{font-family:ui-monospace,monospace;font-size:0.95rem;color:#5b21b6;background:#f3f0ff;padding:0.2rem 0.5rem;border-radius:4px}
+form.filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin:1rem 0;padding:1rem;background:#fff;border:1px solid #e5e5f0;border-radius:8px}
+form.filter label{display:flex;flex-direction:column;font-size:0.8rem;color:#64648c;gap:0.2rem}
+form.filter input,form.filter select{padding:0.4rem;border:1px solid #d4d4e0;border-radius:4px;font-size:0.9rem;font-family:inherit}
+form.filter .actions{display:flex;align-items:flex-end;gap:0.5rem}
+form.filter button{padding:0.5rem 1rem;background:#7c3aed;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem}
+form.filter button:hover{background:#6b21d4}
+form.filter a.clear{padding:0.5rem 1rem;color:#64648c;text-decoration:none;border:1px solid #d4d4e0;border-radius:4px;font-size:0.9rem}
+.summary{color:#64648c;font-size:0.85rem;margin:0.75rem 0}
+.error{padding:1rem;background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;border-radius:4px;font-family:ui-monospace,monospace;font-size:0.85rem;margin:1rem 0;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e5e5f0;border-radius:8px;overflow:hidden;font-size:0.85rem}
+th,td{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid #f0f0f8;vertical-align:top}
+th{background:#f8f8fc;font-weight:600;font-size:0.8rem;color:#64648c;text-transform:uppercase;letter-spacing:0.03em}
+tr:hover td{background:#fafafd}
+tr:last-child td{border-bottom:none}
+td.meta{font-family:ui-monospace,monospace;color:#64648c;white-space:nowrap}
+.outcome-success{color:#15803d;font-weight:500}
+.outcome-failure{color:#b91c1c;font-weight:500}
+.pagination{margin-top:1rem;text-align:center}
+.pagination a{display:inline-block;padding:0.5rem 1rem;background:#7c3aed;color:#fff;text-decoration:none;border-radius:4px;font-size:0.9rem}
+.pagination a:hover{background:#6b21d4}
+.pagination .end{color:#64648c;font-size:0.85rem;font-style:italic}
+@media (prefers-color-scheme:dark){
+body{background:#0f0f1a;color:#e5e5f0}
+form.filter{background:#1a1a2e;border-color:#2a2a40}
+form.filter input,form.filter select{background:#0f0f1a;border-color:#2a2a40;color:#e5e5f0}
+form.filter a.clear{color:#9898b8;border-color:#2a2a40}
+table{background:#1a1a2e;border-color:#2a2a40}
+th{background:#0f0f1a;color:#9898b8}
+th,td{border-color:#2a2a40}
+tr:hover td{background:#252540}
+td.meta{color:#9898b8}
+.log-name{background:#2a1a4a;color:#c4b5fd}
+.error{background:#3a1515;border-color:#7a3030;color:#fca5a5}
+}
+</style>
+</head>
+<body>
+
+<h1>Audit log <span class="log-name">{{ log_name }}</span></h1>
+
+{% if error %}
+<div class="error">Could not load events: {{ error }}</div>
+{% endif %}
+
+<form class="filter" method="get">
+  <label>Actor ID
+    <input type="text" name="actor_id" value="{{ filter_actor_id }}">
+  </label>
+  <label>Action
+    <input type="text" name="action" value="{{ filter_action }}">
+  </label>
+  <label>Target type
+    <input type="text" name="target_type" value="{{ filter_target_type }}">
+  </label>
+  <label>Target ID
+    <input type="text" name="target_id" value="{{ filter_target_id }}">
+  </label>
+  <label>Request ID
+    <input type="text" name="request_id" value="{{ filter_request_id }}">
+  </label>
+  <label>Outcome
+    <select name="outcome">
+      <option value=""{% if not filter_outcome %} selected{% endif %}>-- any --</option>
+      <option value="success"{% if filter_outcome == "success" %} selected{% endif %}>success</option>
+      <option value="failure"{% if filter_outcome == "failure" %} selected{% endif %}>failure</option>
+    </select>
+  </label>
+  <label>Since (ISO date or &micro;s)
+    <input type="text" name="since" value="{{ filter_since }}" placeholder="2026-01-01">
+  </label>
+  <label>Until (ISO date or &micro;s)
+    <input type="text" name="until" value="{{ filter_until }}" placeholder="2026-12-31">
+  </label>
+  <div class="actions">
+    <button type="submit">Filter</button>
+    <a class="clear" href="?">Clear</a>
+  </div>
+</form>
+
+{% if has_events %}
+<p class="summary">Showing {{ events|length }} event(s).</p>
+<table>
+  <thead>
+    <tr>
+      <th>Time (UTC)</th>
+      <th>Actor</th>
+      <th>Action</th>
+      <th>Target</th>
+      <th>Outcome</th>
+      <th>Request ID</th>
+      <th>Source</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in events %}
+    <tr>
+      <td class="meta">{{ event.occurred_at }}</td>
+      <td>{{ event.actor }}</td>
+      <td>{{ event.action }}</td>
+      <td>{{ event.target }}</td>
+      <td class="outcome-{{ event.outcome_class }}">{{ event.outcome }}</td>
+      <td class="meta">{{ event.request_id }}</td>
+      <td>{{ event.source }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  {% if has_next %}
+    <a href="{{ next_url }}">Next page &raquo;</a>
+  {% else %}
+    <span class="end">End of results.</span>
+  {% endif %}
+</div>
+{% else %}
+{% if not error %}
+<p class="summary">No events match the filter.</p>
+{% endif %}
+{% endif %}
+
+</body>
+</html>

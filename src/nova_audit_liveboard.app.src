@@ -1,0 +1,18 @@
+%% -*- mode: erlang;erlang-indent-level: 4;indent-tabs-mode: nil -*-
+{application, nova_audit_liveboard, [
+    {description, "Browser panel for nova_audit (Nova app)"},
+    {vsn, "git"},
+    {registered, []},
+    {mod, {nova_audit_liveboard_app, []}},
+    {included_applications, []},
+    {applications, [
+        kernel,
+        stdlib,
+        nova,
+        nova_audit
+    ]},
+    {env, [{page_size, 50}]},
+    {modules, []},
+    {licenses, ["Apache-2.0"]},
+    {links, [{"GitHub", "https://github.com/novaframework/nova_audit_liveboard"}]}
+]}.
