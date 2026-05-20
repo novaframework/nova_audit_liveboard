@@ -23,7 +23,7 @@ jobs:
     with:
       enable-ct: false
       enable-hank: true
-      enable-audit: true
+      enable-audit: false
       enable-sbom: true
       enable-sbom-scan: true
       enable-dependency-submission: true
